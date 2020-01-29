@@ -79,9 +79,9 @@ jobs:
           name: Deploy to S3
           command: |
             if [ "${CIRCLE_BRANCH}" == "staging" ]; then
-                aws --region eu-west-1 sync dist s3://angular-ci-prod/ --delete
+                aws sync dist s3://angular-ci-prod/ --delete
             elif [ "${CIRCLE_BRANCH}" == "master" ]; then
-                aws --region eu-west-1 sync dist s3://angular-ci-prod/ --delete
+                aws sync dist s3://angular-ci-prod/ --delete
             fi
 workflows:
   version: 2
