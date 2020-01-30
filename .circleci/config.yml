@@ -66,6 +66,10 @@ jobs:
       # dist folder that needs to be deployed
       - restore_cache:
           key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+      # Install python
+      - run:
+          name: Install Python
+          command: sudo apt-get install python3.6
       # Install AWS cli
       - run:
           name: Install aws cli
