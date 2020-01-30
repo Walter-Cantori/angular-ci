@@ -69,7 +69,7 @@ jobs:
       # Install python
       - run:
           name: Install Python
-          command: sudo apt-get install python3.6
+          command: sudo apt-get -y install python3-pip
       # Install AWS cli
       - run:
           name: Install aws cli
