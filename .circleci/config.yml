@@ -39,7 +39,7 @@ jobs:
       # the current branch
       - run:
           name: Building
-          command: npm run build:qa npm run build:prod
+          command: npm run build:qa
       # Cache the dist folder for the deploy job
       - save_cache:
           key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
