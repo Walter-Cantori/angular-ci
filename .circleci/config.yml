@@ -159,7 +159,7 @@ workflows:
       # require the build job to be successful before it starts
       - deploy_staging:
           requires:
-            - build
+            - build_staging
           filters:
             branches:
               only:
