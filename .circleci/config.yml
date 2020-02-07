@@ -41,7 +41,7 @@ jobs:
           name: Building
           command: |
             if [ "${CIRCLE_BRANCH}" == "staging" ]; then
-                npm run build:qa
+                npm run build:staging
             elif [ "${CIRCLE_BRANCH}" == "prod" ]; then
                 npm run build:prod
             else
@@ -83,9 +83,9 @@ jobs:
           name: Deploy to S3
           command: |
             if [ "${CIRCLE_BRANCH}" == "staging" ]; then
-                aws s3 sync dist/angular-ci s3://angular-ci-staging/ --delete
+                aws s3 sync dist/angular-ci s3://angular-ci2-staging/ --delete
             elif [ "${CIRCLE_BRANCH}" == "prod" ]; then
-                aws s3 sync dist/angular-ci s3://angular-ci-prod/ --delete
+                aws s3 sync dist/angular-ci s3://angular-ci2-prod/ --delete
             fi
 workflows:
   version: 2
