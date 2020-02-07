@@ -2,7 +2,7 @@ version: 2
 
 jobs:
   # The build job
-  build_staging:
+  build:
     working_directory: ~/project
     docker:
       - image: circleci/node:12.14-browsers
@@ -39,88 +39,21 @@ jobs:
       # the current branch
       - run:
           name: Building
-          command: npm run build:qa
-      # Cache the dist folder for the deploy job
-      - save_cache:
-          key: v1-dist-staging-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - dist
-  # The deploy job
-  deploy_staging:
-    working_directory: ~/project
-    docker:
-      - image: circleci/node:12.14-browsers
-    steps:
-      # Log the current branch
-      - run:
-          name: Show current branch
-          command: echo ${CIRCLE_BRANCH}
-      # Restore cache from the build job which contains the
-      # dist folder that needs to be deployed
-      - restore_cache:
-          key: v1-dist-staging-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
-      # Install python
-      - run:
-          name: Install Python
-          command: sudo apt-get -y install python3-pip
-      # Install AWS cli
-      - run:
-          name: Install aws cli
-          command: pip3 install awscli --upgrade --user
-      # Set the signature version for the S3 auth
-      - run:
-          name: Setting Signature Version 4 for S3 Request Authentication
-          command: aws configure set default.s3.signature_version s3v4
-      # Deploy to the S3 bucket corresponding to the current branch
-      - run:
-          name: Deploy to S3
-          command: aws s3 sync dist/angular-ci s3://angular-ci-prod/ --delete
-  # The build job
-  build_prod:
-    working_directory: ~/project
-    docker:
-      - image: circleci/node:12.14-browsers
-    steps:
-      # Checkout the code from the branch into the working_directory
-      - checkout
-      # Log the current branch
-      - run:
-          name: Show current branch
-          command: echo ${CIRCLE_BRANCH}
-      # Restore local dependencies from cache
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            - v1-dependencies-
-      # Install project dependencies
-      - run:
-          name: Install local dependencies
-          command: npm install
-      # Cache local dependencies if they don't exist
-      - save_cache:
-          key: v1-dependencies-{{ checksum "package.json" }}
-          paths:
-            - node_modules
-      # Lint the source code
-      - run:
-          name: Linting
-          command: npm run lint
-      # Test the source code
-      - run:
-          name: Testing
-          command: npm run test:ci
-      # Build project with different configuration based on
-      # the current branch
-      - run:
-          name: Building
-          command: npm run build:prod
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "staging" ]; then
+                npm run build:staging
+            elif [ "${CIRCLE_BRANCH}" == "prod" ]; then
+                npm run build:prod
+            else
+                npm run build
+            fi
       # Cache the dist folder for the deploy job
       - save_cache:
           key: v1-dist-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - dist
   # The deploy job
-  deploy_prod:
+  deploy:
     working_directory: ~/project
     docker:
       - image: circleci/node:12.14-browsers
@@ -148,35 +81,25 @@ jobs:
       # Deploy to the S3 bucket corresponding to the current branch
       - run:
           name: Deploy to S3
-          command: aws s3 sync dist/angular-ci s3://angular-ci-prod/ --delete
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "staging" ]; then
+                aws s3 sync dist/angular-ci s3://angular-ci2-staging/ --delete
+            elif [ "${CIRCLE_BRANCH}" == "prod" ]; then
+                aws s3 sync dist/angular-ci s3://angular-ci2-prod/ --delete
+            fi
 workflows:
   version: 2
   # The build and deploy workflow
   build_and_deploy:
     jobs:
-      - build_staging
+      - build
       # The deploy job will only run on the filtered branches and
       # require the build job to be successful before it starts
-      - deploy_staging:
+      - deploy:
           requires:
-            - build_staging
+            - build
           filters:
             branches:
               only:
                 - staging
-      - build_prod_approval:
-          type: approval
-          requires:
-            - deploy_staging
-      - build_prod:
-          requires:
-            - build_prod_approval
-      # The deploy job will only run on the filtered branches and
-      # require the build job to be successful before it starts
-      - deploy_prod:
-          requires:
-            - build_prod
-          filters:
-            branches:
-              only:
-                - staging
+                - prod
